@@ -1,93 +1,182 @@
-import {Request,Response} from "express";
+import { Request, Response } from "express";
 import { AuthService } from "../service/AuthService";
+import { signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/auth.validator";
 
 export class AuthController {
     private authService: AuthService;
 
-    constructor(authService:AuthService){
+    constructor(authService: AuthService) {
         this.authService = authService;
     }
 
-    async signup(req:Request,res:Response):Promise<void>{
+    async signup(req: Request, res: Response): Promise<void> {
         try {
-            const {email,password} = req.body;
+            const validation = signupSchema.safeParse(req.body);
 
-            if(!email || !password){
-                res.status(400).json({message:"Email and password are required"});
-                return ; 
+            if (!validation.success) {
+                res.status(400).json({
+                    message: validation.error.issues[0].message,
+                    errors: validation.error.issues
+                });
+                return;
             }
 
-            const result = await this.authService.signup({email,password});
+            const { email, password } = validation.data;
+
+            const result = await this.authService.signup({ email, password });
             res.status(201).json({
-                message:"User created successfully",
-                user:result
+                message: "User created successfully",
+                user: result
             })
-        } catch (error:any) {
-            res.status(400).json({message:error.message});
+        } catch (error: any) {
+            res.status(400).json({ message: error.message });
         }
     }
 
-    async verifyOtp(req:Request,res:Response): Promise<void> {
+    async verifyOtp(req: Request, res: Response): Promise<void> {
         try {
-            const {email,otp} = req.body;
+            const { email, otp } = req.body;
 
-            if(!email || !otp){
-                res.status(400).json({message:"Email and otp are required"})
-                return ;
+            if (!email || !otp) {
+                res.status(400).json({ message: "Email and otp are required" })
+                return;
             }
 
-            const result = await this.authService.verifyOtp(email,otp);
+            const result = await this.authService.verifyOtp(email, otp);
             res.status(201).json({
-                message:"User verified and created successfully",
-                user:result 
+                message: "User verified and created successfully",
+                user: result
             })
-        } catch (error:any) {
-            res.status(400).json({message:error.message})
+        } catch (error: any) {
+            res.status(400).json({ message: error.message })
         }
     }
 
-    async resendOtp(req:Request,res:Response):Promise<void>{
+    async resendOtp(req: Request, res: Response): Promise<void> {
         try {
-            const {email} = req.body;
+            const { email } = req.body;
 
-            if(!email){
-                res.status(400).json({message:"Email is required"}); 
-                return; 
+            if (!email) {
+                res.status(400).json({ message: "Email is required" });
+                return;
             }
 
             const result = await this.authService.resendOtp(email);
-            res.status(200).json(result); 
-        } catch (error:any) {
-            res.status(400).json({message:error.message})
+            res.status(200).json(result);
+        } catch (error: any) {
+            res.status(400).json({ message: error.message })
         }
     }
 
-    async login(req:Request,res:Response):Promise<void>{
+    async login(req: Request, res: Response): Promise<void> {
         try {
-            const {email,password} = req.body;
+            const validation = loginSchema.safeParse(req.body);
 
-            if(!email || !password){
-                res.status(400).json({message:"Email and password are required"}); 
-                return ;
+            if (!validation.success) {
+                res.status(400).json({
+                    message: validation.error.issues[0].message,
+                    errors: validation.error.issues
+                });
+                return;
             }
 
-            const result = await this.authService.login({email,password});
+            const { email, password } = validation.data;
 
-            res.cookie("refreshToken",result.refreshToken,{
-                httpOnly:true,
-                secure:false,
-                sameSite:"strict",
-                maxAge:  7 * 24 * 60 * 60 * 1000, // 7 days
-                
+            const result = await this.authService.login({ email, password });
+
+            res.cookie("refreshToken", result.refreshToken, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "strict",
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+
             })
 
             res.status(200).json({
-                message:"Login successful",
+                message: "Login successful",
                 user: result.user,
-                accessToken:result.accessToken
+                accessToken: result.accessToken
             })
-        } catch (error:any) {
-            res.status(401).json({message:error.message})
+        } catch (error: any) {
+            res.status(401).json({ message: error.message })
+        }
+    }
+
+    async refreshToken(req: Request, res: Response): Promise<void> {
+        try {
+            const refreshToken = req.cookies.refreshToken;
+            if (!refreshToken) {
+                res.status(401).json({ message: "Refresh token not found" });
+                return;
+            }
+
+            const result = await this.authService.refreshToken(refreshToken);
+            res.status(200).json(result);
+        } catch (error: any) {
+            res.status(401).json({ message: error.message });
+        }
+    }
+
+    async logout(req: Request, res: Response): Promise<void> {
+        res.clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: false,
+            sameSite: "strict"
+        });
+        res.status(200).json({ message: "Logged out successfully" });
+    }
+
+    async forgotPassword(req: Request, res: Response): Promise<void> {
+        try {
+            const validation = forgotPasswordSchema.safeParse(req.body);
+
+            if (!validation.success) {
+                res.status(400).json({
+                    message: validation.error.issues[0].message,
+                    errors: validation.error.issues
+                });
+                return;
+            }
+
+            const { email } = validation.data;
+            const result = await this.authService.forgotPassword(email);
+            res.status(200).json(result);
+        } catch (error: any) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
+    async verifyForgotPasswordOtp(req: Request, res: Response): Promise<void> {
+        try {
+            const { email, otp } = req.body;
+            if (!email || !otp) {
+                res.status(400).json({ message: "Email and OTP are required" });
+                return;
+            }
+            const result = await this.authService.verifyForgotPasswordOtp(email, otp);
+            res.status(200).json(result);
+        } catch (error: any) {
+            res.status(400).json({ message: error.message });
+        }
+    }
+
+    async resetPassword(req: Request, res: Response): Promise<void> {
+        try {
+            const validation = resetPasswordSchema.safeParse(req.body);
+
+            if (!validation.success) {
+                res.status(400).json({
+                    message: validation.error.issues[0].message,
+                    errors: validation.error.issues
+                });
+                return;
+            }
+
+            const { email, otp, password } = validation.data;
+            const result = await this.authService.resetPassword(email, otp, password);
+            res.status(200).json(result);
+        } catch (error: any) {
+            res.status(400).json({ message: error.message });
         }
     }
 }
