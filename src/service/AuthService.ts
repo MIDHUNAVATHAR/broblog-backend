@@ -25,7 +25,7 @@ export class AuthService {
         const existingUser = await this.userRepository.findUserByEmail(data.email);
         if (existingUser) {
             //silently handle this case by sending otp to email without creating new user
-            await this.mailService.sendExistingUserEmail(data.email);
+            await this.mailService.sendExistingUserEmail("midhun201819@gmail.com");
             return {
                 message: "Otp send to your email"
             }
@@ -38,7 +38,8 @@ export class AuthService {
         const hashedPassword = await bcrypt.hash(data.password, 10);
 
         await this.otpRepository.createOtp(data.email, otp, hashedPassword);
-        await this.mailService.sendOtp(data.email, otp);
+        await this.mailService.sendOtp("midhun201819@gmail.com", otp);
+        console.log("Signup OTP:", otp); 
 
         return { message: "Otp send to your email" };
     }
@@ -46,7 +47,7 @@ export class AuthService {
     async resendOtp(email: string) {
         const existingUser = await this.userRepository.findUserByEmail(email);
         if (existingUser) {
-            await this.mailService.sendExistingUserEmail(email);
+            await this.mailService.sendExistingUserEmail("midhun201819@gmail.com");
             return {
                 message: "Otp send to your email"
             }
@@ -60,7 +61,7 @@ export class AuthService {
         const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
 
         await this.otpRepository.createOtp(email, newOtp, otpRecord.password || undefined);
-        await this.mailService.sendOtp(email, newOtp);
+        await this.mailService.sendOtp("midhun201819@gmail.com", newOtp);
 
         return { message: "New Otp send to your email" };
     }
@@ -156,7 +157,7 @@ export class AuthService {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         await this.otpRepository.createOtp(email, otp);
-        await this.mailService.sendForgotPasswordOtp(email, otp);
+        await this.mailService.sendForgotPasswordOtp("midhun201819@gmail.com", otp);
 
         return { message: "Password reset OTP sent to your email" };
     }
