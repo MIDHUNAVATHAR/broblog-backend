@@ -44,11 +44,3 @@ model Like {
   @@unique([userId, blogId])
 }
 
-model Otp {
-  id        String   @id @default(uuid())
-  email     String
-  password  String?
-  otp       String
-  createdAt DateTime @default(now())
-  expiresAt DateTime 
-}

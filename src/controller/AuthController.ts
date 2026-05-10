@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { AuthService } from "../service/AuthService";
-import { signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/auth.validator";
+import { signupSchema, loginSchema } from "../validators/auth.validator";
 
 export class AuthController {
     private authService: AuthService;
@@ -33,40 +33,7 @@ export class AuthController {
         }
     }
 
-    async verifyOtp(req: Request, res: Response): Promise<void> {
-        try {
-            const { email, otp } = req.body;
 
-            if (!email || !otp) {
-                res.status(400).json({ message: "Email and otp are required" })
-                return;
-            }
-
-            const result = await this.authService.verifyOtp(email, otp);
-            res.status(201).json({
-                message: "User verified and created successfully",
-                user: result
-            })
-        } catch (error: any) {
-            res.status(400).json({ message: error.message })
-        }
-    }
-
-    async resendOtp(req: Request, res: Response): Promise<void> {
-        try {
-            const { email } = req.body;
-
-            if (!email) {
-                res.status(400).json({ message: "Email is required" });
-                return;
-            }
-
-            const result = await this.authService.resendOtp(email);
-            res.status(200).json(result);
-        } catch (error: any) {
-            res.status(400).json({ message: error.message })
-        }
-    }
 
     async login(req: Request, res: Response): Promise<void> {
         try {
@@ -126,57 +93,5 @@ export class AuthController {
         res.status(200).json({ message: "Logged out successfully" });
     }
 
-    async forgotPassword(req: Request, res: Response): Promise<void> {
-        try {
-            const validation = forgotPasswordSchema.safeParse(req.body);
 
-            if (!validation.success) {
-                res.status(400).json({
-                    message: validation.error.issues[0].message,
-                    errors: validation.error.issues
-                });
-                return;
-            }
-
-            const { email } = validation.data;
-            const result = await this.authService.forgotPassword(email);
-            res.status(200).json(result);
-        } catch (error: any) {
-            res.status(400).json({ message: error.message });
-        }
-    }
-
-    async verifyForgotPasswordOtp(req: Request, res: Response): Promise<void> {
-        try {
-            const { email, otp } = req.body;
-            if (!email || !otp) {
-                res.status(400).json({ message: "Email and OTP are required" });
-                return;
-            }
-            const result = await this.authService.verifyForgotPasswordOtp(email, otp);
-            res.status(200).json(result);
-        } catch (error: any) {
-            res.status(400).json({ message: error.message });
-        }
-    }
-
-    async resetPassword(req: Request, res: Response): Promise<void> {
-        try {
-            const validation = resetPasswordSchema.safeParse(req.body);
-
-            if (!validation.success) {
-                res.status(400).json({
-                    message: validation.error.issues[0].message,
-                    errors: validation.error.issues
-                });
-                return;
-            }
-
-            const { email, otp, password } = validation.data;
-            const result = await this.authService.resetPassword(email, otp, password);
-            res.status(200).json(result);
-        } catch (error: any) {
-            res.status(400).json({ message: error.message });
-        }
-    }
 }

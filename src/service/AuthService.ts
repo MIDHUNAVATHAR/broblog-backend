@@ -3,100 +3,38 @@ import jwt from "jsonwebtoken"
 import { IUserRepository } from "../interfaces/IUserRepository";
 import { SignupDTO } from "../dto/SignupDTO";
 import { LoginDTO } from "../dto/LoginDTO";
+import { UserResponseDTO } from "../dto/UserResponseDTO";
+import { UserMapper } from "../mappers/UserMapper";
 
-import { IOtpRepository } from "../interfaces/IOtpRepository";
-import { MailService } from "./MailService";
 
 export class AuthService {
     private userRepository: IUserRepository;
-    private otpRepository: IOtpRepository;
-    private mailService: MailService;
 
-    constructor(userRepository: IUserRepository, otpRepository: IOtpRepository, mailService: MailService) {
+    constructor(userRepository: IUserRepository) {
         this.userRepository = userRepository;
-        this.otpRepository = otpRepository;
-        this.mailService = mailService;
     }
 
-    async signup(data: SignupDTO) {
-        /**
-         * check email already exists
-         */
+    async signup(data: SignupDTO): Promise<UserResponseDTO & { message: string }> {
         const existingUser = await this.userRepository.findUserByEmail(data.email);
         if (existingUser) {
-            //silently handle this case by sending otp to email without creating new user
-            await this.mailService.sendExistingUserEmail("midhun201819@gmail.com");
-            return {
-                message: "Otp send to your email"
-            }
+            throw new Error("User already exists");
         }
 
-        /**
-         * generate a 6 digit otp
-         */
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashedPassword = await bcrypt.hash(data.password, 10);
-
-        await this.otpRepository.createOtp(data.email, otp, hashedPassword);
-        await this.mailService.sendOtp("midhun201819@gmail.com", otp);
-        console.log("Signup OTP:", otp); 
-
-        return { message: "Otp send to your email" };
-    }
-
-    async resendOtp(email: string) {
-        const existingUser = await this.userRepository.findUserByEmail(email);
-        if (existingUser) {
-            await this.mailService.sendExistingUserEmail("midhun201819@gmail.com");
-            return {
-                message: "Otp send to your email"
-            }
-        }
-
-        const otpRecord = await this.otpRepository.findOtpByEmail(email);
-        if (!otpRecord) {
-            throw new Error("Session expired. Please signup again");
-        }
-
-        const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-
-        await this.otpRepository.createOtp(email, newOtp, otpRecord.password || undefined);
-        await this.mailService.sendOtp("midhun201819@gmail.com", newOtp);
-
-        return { message: "New Otp send to your email" };
-    }
-
-    async verifyOtp(email: string, otp: string) {
-        const otpRecord = await this.otpRepository.findOtpByEmail(email);
-        if (!otpRecord) {
-            throw new Error("Invaid or expired otp");
-        }
-
-        if (otpRecord.otp !== otp) {
-            throw new Error("Incorrect OTP");
-        }
-
-        if (!otpRecord.password) {
-            throw new Error("Invalid OTP session");
-        }
-
-        /**
-         * otp is valid, create user and delete otp record
-         */
         const newUser = await this.userRepository.createUser({
-            email: otpRecord.email,
-            password: otpRecord.password
-        })
-
-        await this.otpRepository.deleteOtpByEmail(email);
+            email: data.email,
+            password: hashedPassword
+        });
 
         return {
-            id: newUser.id,
-            email: newUser.email
-        }
+            ...UserMapper.toResponseDTO(newUser),
+            message: "User created successfully"
+        };
     }
 
-    async login(data: LoginDTO) {
+
+
+    async login(data: LoginDTO): Promise<{ user: UserResponseDTO; accessToken: string; refreshToken: string }> {
         const user = await this.userRepository.findUserByEmail(data.email);
         if (!user) {
             throw new Error("Invalid credentials")
@@ -118,10 +56,7 @@ export class AuthService {
             { expiresIn: "7d" }
         )
         return {
-            user: {
-                id: user.id,
-                email: user.email
-            },
+            user: UserMapper.toResponseDTO(user),
             accessToken,
             refreshToken
         }
@@ -148,39 +83,5 @@ export class AuthService {
         }
     }
 
-    async forgotPassword(email: string) {
-        const user = await this.userRepository.findUserByEmail(email);
-        if (!user) {
-            // Silently return success to prevent email enumeration
-            return { message: "Password reset OTP sent to your email" };
-        }
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        await this.otpRepository.createOtp(email, otp);
-        await this.mailService.sendForgotPasswordOtp("midhun201819@gmail.com", otp);
-
-        return { message: "Password reset OTP sent to your email" };
-    }
-
-    async verifyForgotPasswordOtp(email: string, otp: string) {
-        const otpRecord = await this.otpRepository.findOtpByEmail(email);
-        if (!otpRecord || otpRecord.otp !== otp) {
-            throw new Error("Invalid or expired OTP");
-        }
-
-        return { message: "OTP verified successfully" };
-    }
-
-    async resetPassword(email: string, otp: string, password: string) {
-        const otpRecord = await this.otpRepository.findOtpByEmail(email);
-        if (!otpRecord || otpRecord.otp !== otp) {
-            throw new Error("Invalid or expired OTP");
-        }
-
-        const hashedPassword = await bcrypt.hash(password, 10);
-        await this.userRepository.updateUserPassword(email, hashedPassword);
-        await this.otpRepository.deleteOtpByEmail(email);
-
-        return { message: "Password reset successful" };
-    }
 }

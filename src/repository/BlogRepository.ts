@@ -1,5 +1,7 @@
 import { PrismaClient, Blog } from "@prisma/client";
 import { IBlogRepository } from "../interfaces/IBlogRepository";
+import { CreateBlogDTO } from "../dto/CreateBlogDTO";
+import { UpdateBlogDTO } from "../dto/UpdateBlogDTO";
 
 export class BlogRepository implements IBlogRepository {
     private prisma: PrismaClient;
@@ -8,7 +10,7 @@ export class BlogRepository implements IBlogRepository {
         this.prisma = prisma;
     }
 
-    async createBlog(data: { title: string; content: string; image?: string; imagePublicId?: string; readingTime?: string; authorId: string }): Promise<Blog> {
+    async createBlog(data: CreateBlogDTO): Promise<Blog> {
         return await this.prisma.blog.create({
             data
         });
@@ -45,7 +47,7 @@ export class BlogRepository implements IBlogRepository {
         });
     }
 
-    async updateBlog(id: string, data: { title: string; content: string; readingTime?: string }): Promise<Blog> {
+    async updateBlog(id: string, data: UpdateBlogDTO): Promise<Blog> {
         return await this.prisma.blog.update({
             where: { id },
             data
