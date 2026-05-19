@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { authController } from "../di";
+import { ROUTE_PATHS } from "../constants/routes";
 
 const authRouter = Router();
 
-authRouter.post("/signup",(req,res) => authController.signup(req,res) ); 
-authRouter.post("/login",(req,res)=>authController.login(req,res)); 
-authRouter.post("/refresh-token",(req,res)=>authController.refreshToken(req,res)); 
-authRouter.post("/logout",(req,res)=>authController.logout(req,res)); 
+authRouter.post(ROUTE_PATHS.AUTH.SIGNUP, (req, res, next) => authController.signup(req, res, next));
+authRouter.post(ROUTE_PATHS.AUTH.LOGIN, (req, res, next) => authController.login(req, res, next));
+authRouter.post(ROUTE_PATHS.AUTH.REFRESH_TOKEN, (req, res, next) => authController.refreshToken(req, res, next));
+authRouter.post(ROUTE_PATHS.AUTH.LOGOUT, (req, res) => authController.logout(req, res));
 
 export default authRouter;

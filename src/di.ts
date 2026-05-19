@@ -5,6 +5,7 @@ import { BlogRepository } from "./repository/BlogRepository";
 import { BlogService } from "./service/BlogService";
 import { BlogController } from "./controller/BlogController";
 import { UploadController } from "./controller/UploadController";
+import { UploadService } from "./service/UploadService";
 import prisma from "./config/prisma";
 
 const userRepository = new UserRepository(prisma);
@@ -15,4 +16,5 @@ const blogRepository = new BlogRepository(prisma);
 const blogService = new BlogService(blogRepository);
 export const blogController = new BlogController(blogService);
 
-export const uploadController = new UploadController();
+const uploadService = new UploadService();
+export const uploadController = new UploadController(uploadService);

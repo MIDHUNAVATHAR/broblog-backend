@@ -5,9 +5,9 @@ import { SignupDTO } from "../dto/SignupDTO";
 import { LoginDTO } from "../dto/LoginDTO";
 import { UserResponseDTO } from "../dto/UserResponseDTO";
 import { UserMapper } from "../mappers/UserMapper";
+import { IAuthService } from "../interfaces/IServices/IAuthService";
 
-
-export class AuthService {
+export class AuthService implements IAuthService {
     private userRepository: IUserRepository;
 
     constructor(userRepository: IUserRepository) {

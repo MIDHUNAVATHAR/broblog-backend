@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { env } from "process";
 import prisma from "./config/prisma";
 import indexRouter from "./routes/index.routes"
+import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
 app.use(cors({
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
 })
 
 app.use("/api", indexRouter);
+app.use(errorHandler);
 app.get("/", (req, res) => {
     res.send("server running...");
 })

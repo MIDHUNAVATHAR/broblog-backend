@@ -1,6 +1,5 @@
-import { Blog } from "@prisma/client";
 import { IBlogRepository } from "../interfaces/IBlogRepository";
-import { IBlogService } from "../interfaces/IBlogService";
+import { IBlogService } from "../interfaces/IServices/IBlogService";
 import cloudinary from "../config/cloudinary";
 import { CreateBlogDTO } from "../dto/CreateBlogDTO";
 import { UpdateBlogDTO } from "../dto/UpdateBlogDTO";

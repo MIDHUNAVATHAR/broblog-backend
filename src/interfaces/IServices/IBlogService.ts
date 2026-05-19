@@ -1,7 +1,7 @@
 import { Blog } from "@prisma/client";
-import { CreateBlogDTO } from "../dto/CreateBlogDTO";
-import { UpdateBlogDTO } from "../dto/UpdateBlogDTO";
-import { BlogResponseDTO } from "../dto/BlogResponseDTO";
+import { CreateBlogDTO } from "../../dto/CreateBlogDTO";
+import { UpdateBlogDTO } from "../../dto/UpdateBlogDTO";
+import { BlogResponseDTO } from "../../dto/BlogResponseDTO";
 
 export interface IBlogService {
     createBlog(data: CreateBlogDTO): Promise<BlogResponseDTO>;

@@ -1,17 +1,18 @@
 import { Router } from "express";
 import { BlogController } from "../controller/BlogController";
 import { authMiddleware } from "../middlewares/auth.middleware";
+import { ROUTE_PATHS } from "../constants/routes";
 
 export const blogRoutes = (blogController: BlogController) => {
     const router = Router();
 
-    router.post("/", authMiddleware, (req, res) => blogController.createBlog(req, res));
-    router.get("/", (req, res) => blogController.getAllBlogs(req, res));
-    router.get("/my-blogs", authMiddleware, (req, res) => blogController.getMyBlogs(req, res));
-    router.get("/:id", (req, res) => blogController.getBlogById(req, res));
-    router.put("/:id", authMiddleware, (req, res) => blogController.updateBlog(req, res));
-    router.delete("/:id", authMiddleware, (req, res) => blogController.deleteBlog(req, res));
-    router.post("/:id/like", authMiddleware, (req, res) => blogController.toggleLike(req, res));
+    router.post(ROUTE_PATHS.BLOGS.CREATE, authMiddleware, (req, res, next) => blogController.createBlog(req, res, next));
+    router.get(ROUTE_PATHS.BLOGS.GET_ALL, (req, res, next) => blogController.getAllBlogs(req, res, next));
+    router.get(ROUTE_PATHS.BLOGS.GET_MY, authMiddleware, (req, res, next) => blogController.getMyBlogs(req, res, next));
+    router.get(ROUTE_PATHS.BLOGS.GET_BY_ID, (req, res, next) => blogController.getBlogById(req, res, next));
+    router.put(ROUTE_PATHS.BLOGS.UPDATE, authMiddleware, (req, res, next) => blogController.updateBlog(req, res, next));
+    router.delete(ROUTE_PATHS.BLOGS.DELETE, authMiddleware, (req, res, next) => blogController.deleteBlog(req, res, next));
+    router.post(ROUTE_PATHS.BLOGS.LIKE, authMiddleware, (req, res, next) => blogController.toggleLike(req, res, next));
 
     return router;
 };

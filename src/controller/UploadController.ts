@@ -1,30 +1,32 @@
-import { Request, Response } from 'express';
-import cloudinary from '../config/cloudinary';
+import { Request, Response, NextFunction } from 'express';
+import { StatusCode } from '../constants/statusCodes';
+import { IUploadService } from '../interfaces/IServices/IUploadService';
+import { CustomError } from '../middlewares/error.middleware';
 
 export class UploadController {
-  async uploadImage(req: Request, res: Response): Promise<void> {
+  private _uploadService: IUploadService;
+
+  constructor(uploadService: IUploadService) {
+    this._uploadService = uploadService;
+  }
+
+  async uploadImage(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       if (!req.file) {
-        res.status(400).json({ message: 'No file uploaded' });
+        const error = new Error('No file uploaded') as CustomError;
+        error.statusCode = StatusCode.BAD_REQUEST;
+        next(error);
         return;
       }
 
-      // Upload to Cloudinary from memory buffer
-      const b64 = Buffer.from(req.file.buffer).toString('base64');
-      let dataURI = 'data:' + req.file.mimetype + ';base64,' + b64;
+      const result = await this._uploadService.uploadImage(req.file);
 
-      const result = await cloudinary.uploader.upload(dataURI, {
-        resource_type: 'auto',
-        folder: 'blog_images'
-      });
-
-      res.status(200).json({
-        url: result.secure_url,
+      res.status(StatusCode.OK).json({
+        url: result.url,
         public_id: result.public_id
       });
-    } catch (error: any) {
-      console.error('Cloudinary upload error:', error);
-      res.status(500).json({ message: 'Failed to upload image' });
+    } catch (error) {
+      next(error);
     }
   }
 }

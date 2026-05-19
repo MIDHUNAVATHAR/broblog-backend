@@ -1,55 +1,58 @@
-import { Request, Response } from "express";
-import { AuthService } from "../service/AuthService";
+import { Request, Response, NextFunction } from "express";
+import { IAuthService } from "../interfaces/IServices/IAuthService";
 import { signupSchema, loginSchema } from "../validators/auth.validator";
+import { StatusCode } from "../constants/statusCodes";
+import { ResponseMessage } from "../constants/messages";
 
 export class AuthController {
-    private authService: AuthService;
+    private _authService: IAuthService;
 
-    constructor(authService: AuthService) {
-        this.authService = authService;
+    constructor(authService: IAuthService) {
+        this._authService = authService;
     }
 
-    async signup(req: Request, res: Response): Promise<void> {
+    async signup(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const validation = signupSchema.safeParse(req.body);
 
             if (!validation.success) {
-                res.status(400).json({
-                    message: validation.error.issues[0].message,
-                    errors: validation.error.issues
-                });
+                const error: any = new Error(validation.error.issues[0].message);
+                error.statusCode = StatusCode.BAD_REQUEST;
+                error.errors = validation.error.issues;
+                next(error);
                 return;
             }
 
             const { email, password } = validation.data;
 
-            const result = await this.authService.signup({ email, password });
-            res.status(201).json({
-                message: "User created successfully",
+            const result = await this._authService.signup({ email, password });
+            res.status(StatusCode.CREATED).json({
+                message: ResponseMessage.USER_CREATED,
                 user: result
             })
         } catch (error: any) {
-            res.status(400).json({ message: error.message });
+            error.statusCode = StatusCode.BAD_REQUEST;
+            next(error);
         }
     }
 
 
 
-    async login(req: Request, res: Response): Promise<void> {
+    async login(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const validation = loginSchema.safeParse(req.body);
 
             if (!validation.success) {
-                res.status(400).json({
-                    message: validation.error.issues[0].message,
-                    errors: validation.error.issues
-                });
+                const error: any = new Error(validation.error.issues[0].message);
+                error.statusCode = StatusCode.BAD_REQUEST;
+                error.errors = validation.error.issues;
+                next(error);
                 return;
             }
 
             const { email, password } = validation.data;
 
-            const result = await this.authService.login({ email, password });
+            const result = await this._authService.login({ email, password });
 
             res.cookie("refreshToken", result.refreshToken, {
                 httpOnly: true,
@@ -59,28 +62,32 @@ export class AuthController {
 
             })
 
-            res.status(200).json({
-                message: "Login successful",
+            res.status(StatusCode.OK).json({
+                message: ResponseMessage.LOGIN_SUCCESS,
                 user: result.user,
                 accessToken: result.accessToken
             })
         } catch (error: any) {
-            res.status(401).json({ message: error.message })
+            error.statusCode = StatusCode.UNAUTHORIZED;
+            next(error);
         }
     }
 
-    async refreshToken(req: Request, res: Response): Promise<void> {
+    async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
         try {
             const refreshToken = req.cookies.refreshToken;
             if (!refreshToken) {
-                res.status(401).json({ message: "Refresh token not found" });
+                const error: any = new Error(ResponseMessage.REFRESH_TOKEN_NOT_FOUND);
+                error.statusCode = StatusCode.UNAUTHORIZED;
+                next(error);
                 return;
             }
 
-            const result = await this.authService.refreshToken(refreshToken);
-            res.status(200).json(result);
+            const result = await this._authService.refreshToken(refreshToken);
+            res.status(StatusCode.OK).json(result);
         } catch (error: any) {
-            res.status(401).json({ message: error.message });
+            error.statusCode = StatusCode.UNAUTHORIZED;
+            next(error);
         }
     }
 
@@ -90,7 +97,7 @@ export class AuthController {
             secure: false,
             sameSite: "strict"
         });
-        res.status(200).json({ message: "Logged out successfully" });
+        res.status(StatusCode.OK).json({ message: ResponseMessage.LOGGED_OUT });
     }
 
 

@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-(cloudinary.config as any)(process.env.CLOUDINARY_URL);
+cloudinary.config({
+    secure: true
+})
 
 export default cloudinary;
