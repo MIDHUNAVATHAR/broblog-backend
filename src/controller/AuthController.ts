@@ -3,6 +3,8 @@ import { IAuthService } from "../interfaces/IServices/IAuthService";
 import { signupSchema, loginSchema } from "../validators/auth.validator";
 import { StatusCode } from "../constants/statusCodes";
 import { ResponseMessage } from "../constants/messages";
+import { CustomError } from "../middlewares/error.middleware";
+
 
 export class AuthController {
     private _authService: IAuthService;
@@ -16,7 +18,7 @@ export class AuthController {
             const validation = signupSchema.safeParse(req.body);
 
             if (!validation.success) {
-                const error: any = new Error(validation.error.issues[0].message);
+                const error  = new Error(validation.error.issues[0].message) as CustomError;
                 error.statusCode = StatusCode.BAD_REQUEST;
                 error.errors = validation.error.issues;
                 next(error);
@@ -30,9 +32,8 @@ export class AuthController {
                 message: ResponseMessage.USER_CREATED,
                 user: result
             })
-        } catch (error: any) {
-            error.statusCode = StatusCode.BAD_REQUEST;
-            next(error);
+        } catch (error) {
+            next(error)
         }
     }
 
@@ -43,7 +44,7 @@ export class AuthController {
             const validation = loginSchema.safeParse(req.body);
 
             if (!validation.success) {
-                const error: any = new Error(validation.error.issues[0].message);
+                const error= new Error(validation.error.issues[0].message) as CustomError;
                 error.statusCode = StatusCode.BAD_REQUEST;
                 error.errors = validation.error.issues;
                 next(error);
@@ -67,9 +68,8 @@ export class AuthController {
                 user: result.user,
                 accessToken: result.accessToken
             })
-        } catch (error: any) {
-            error.statusCode = StatusCode.UNAUTHORIZED;
-            next(error);
+        } catch (error: unknown) {
+             next(error)
         }
     }
 
@@ -77,7 +77,7 @@ export class AuthController {
         try {
             const refreshToken = req.cookies.refreshToken;
             if (!refreshToken) {
-                const error: any = new Error(ResponseMessage.REFRESH_TOKEN_NOT_FOUND);
+                const error = new Error(ResponseMessage.REFRESH_TOKEN_NOT_FOUND) as CustomError;
                 error.statusCode = StatusCode.UNAUTHORIZED;
                 next(error);
                 return;
@@ -85,20 +85,22 @@ export class AuthController {
 
             const result = await this._authService.refreshToken(refreshToken);
             res.status(StatusCode.OK).json(result);
-        } catch (error: any) {
-            error.statusCode = StatusCode.UNAUTHORIZED;
-            next(error);
+        } catch (error) {
+           next(error)
         }
     }
 
-    async logout(req: Request, res: Response): Promise<void> {
-        res.clearCookie("refreshToken", {
-            httpOnly: true,
-            secure: false,
-            sameSite: "strict"
-        });
-        res.status(StatusCode.OK).json({ message: ResponseMessage.LOGGED_OUT });
+    async logout(req: Request, res: Response,next:NextFunction): Promise<void> {
+        try{
+            res.clearCookie("refreshToken", {
+                httpOnly: true,
+                secure: false,
+                sameSite: "strict"
+             });
+            res.status(StatusCode.OK).json({ message: ResponseMessage.LOGGED_OUT });
+        }catch(error){
+            
+            next(error)
+        }
     }
-
-
 }

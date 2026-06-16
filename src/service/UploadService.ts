@@ -17,4 +17,4 @@ export class UploadService implements IUploadService {
       public_id: result.public_id
     };
   }
-}
+} 

@@ -108,10 +108,10 @@ export class BlogController {
         }
     }
 
-    async deleteBlog(req: Request, res: Response, next: NextFunction): Promise<void> {
+    async deleteBlog(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
         try {
             const id = req.params.id as string;
-            const authorId = (req as any).user?.id;
+            const authorId = req.user?.id;
 
             const blog = await this.blogService.getBlogById(id);
             if (!blog) {

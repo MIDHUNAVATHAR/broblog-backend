@@ -7,6 +7,11 @@ import { UserResponseDTO } from "../dto/UserResponseDTO";
 import { UserMapper } from "../mappers/UserMapper";
 import { IAuthService } from "../interfaces/IServices/IAuthService";
 
+interface JwtPayload {
+    id: string;
+    email: string;
+}
+
 export class AuthService implements IAuthService {
     private userRepository: IUserRepository;
 
@@ -64,7 +69,7 @@ export class AuthService implements IAuthService {
 
     async refreshToken(token: string) {
         try {
-            const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string) as any;
+            const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET as string) as JwtPayload;
             const user = await this.userRepository.findUserByEmail(decoded.email);
 
             if (!user) {

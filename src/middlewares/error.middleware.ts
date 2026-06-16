@@ -3,7 +3,7 @@ import { StatusCode } from "../constants/statusCodes";
 
 export interface CustomError extends Error {
     statusCode?: number;
-    errors?: any;
+    errors?: unknown;
 }
 
 export const errorHandler = (
