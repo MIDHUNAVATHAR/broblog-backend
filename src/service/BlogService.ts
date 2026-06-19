@@ -45,7 +45,8 @@ export class BlogService implements IBlogService {
                 await cloudinary.uploader.destroy(blog.imagePublicId);
             } catch (error) {
                 console.error("Failed to delete image from Cloudinary", error);
-                // We still proceed to soft delete the blog even if image deletion fails
+                /* We still proceed to soft delete the blog even if image deletion fails
+                */
             }
         }
         await this.blogRepository.softDelete(id);
