@@ -55,12 +55,14 @@ export class AuthController {
 
             const result = await this._authService.login({ email, password });
 
+            const isProduction = process.env.NODE_ENV === "production" || 
+                (!!process.env.CLIENT_URL && !process.env.CLIENT_URL.includes("localhost") && !process.env.CLIENT_URL.includes("127.0.0.1"));
+
             res.cookie("refreshToken", result.refreshToken, {
                 httpOnly: true,
-                secure: false,
-                sameSite: "strict",
+                secure: isProduction,
+                sameSite: isProduction ? "none" : "lax",
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-
             })
 
             res.status(StatusCode.OK).json({
@@ -92,10 +94,13 @@ export class AuthController {
 
     async logout(req: Request, res: Response,next:NextFunction): Promise<void> {
         try{
+            const isProduction = process.env.NODE_ENV === "production" || 
+                (!!process.env.CLIENT_URL && !process.env.CLIENT_URL.includes("localhost") && !process.env.CLIENT_URL.includes("127.0.0.1"));
+
             res.clearCookie("refreshToken", {
                 httpOnly: true,
-                secure: false,
-                sameSite: "strict"
+                secure: isProduction,
+                sameSite: isProduction ? "none" : "lax"
              });
             res.status(StatusCode.OK).json({ message: ResponseMessage.LOGGED_OUT });
         }catch(error){
